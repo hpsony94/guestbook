@@ -47,7 +47,7 @@ jobs:
             virtualenv ${PROJECT_NAME}
             . ${PROJECT_NAME}/bin/activate
             pip install --no-cache-dir -r src/requirements.txt
-            docker build -t gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}_app .
+            docker build -t ${PROJECT_NAME}_app:$IMAGE_TAG .
 
   deploy-on-pr:
     docker:
@@ -58,7 +58,8 @@ jobs:
           name: Prepare env
           command: |
             echo "export IMAGE_TAG=pr-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
-            docker push gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}_app
+            docker tag ${PROJECT_NAME}_app:$IMAGE_TAG gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}_app:$IMAGE_TAG
+            docker push gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}_app:$IMAGE_TAG
 
 
 # On the master/main branch
