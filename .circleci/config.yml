@@ -1,7 +1,9 @@
 version: 2.1
 
 orbs:
-  python: circleci/python@0.2.1  
+  python: circleci/python@0.2.1
+  gke: circleci/gcp-gke@1.3.0
+  gcr: circleci/gcp-gcr@0.13.0
 
 commands:
   setup_remote_docker_cmd:
@@ -23,10 +25,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Unit Test All
           command: |
             echo Running test cases
-          name: Unit Test All
-
 
 # On PR branch
   pr-dockerize:
@@ -41,17 +42,19 @@ jobs:
           name: Prepare env
           command: |
             echo "export IMAGE_TAG=pr-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
-      # TODO
+            docker-compose build                    
 
   deploy-on-pr:
     docker:
-      - image: gcr.io/google.com/cloudsdktool/cloud-sdk:350.0.0-alpine
+      - image: gcr.io/google.com/cloudsdktool/cloud-sdk:350.0.0-alpine #base image
     steps:
       - run:
           name: Prepare env
           command: |
             echo "export IMAGE_TAG=pr-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
-      # TODO
+            docker tag ${PROJECT_NAME}_app gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}_app
+            docker push gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}_app
+
 
 # On the master/main branch
 # # Custom-step:
@@ -67,6 +70,7 @@ jobs:
           name: Prepare env
           command: |
             echo "export IMAGE_TAG=m-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
+            docker-compose build
       # TODO
 
 # # Deploy
@@ -79,7 +83,8 @@ jobs:
           name: Prepare env
           command: |
             echo "export IMAGE_TAG=m-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
-      # TODO
+            gcloud auth activate-service-account --key-file 
+            
 
 # # Change logs
   custom-step:
