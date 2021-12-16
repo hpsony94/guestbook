@@ -46,7 +46,7 @@ jobs:
             echo 'export IMAGE_NAME=${PROJECT_NAME}' >> $BASH_ENV
             virtualenv ${PROJECT_NAME}
             . ${PROJECT_NAME}/bin/activate
-            pip install --no-cache-dir -r requirements.txt
+            pip install --no-cache-dir -r src/requirements.txt
             docker build -t gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}_app
 
   deploy-on-pr:
