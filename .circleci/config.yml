@@ -64,7 +64,9 @@ jobs:
       - run:
           name: Login GCP with service account
           command: |
-            gcloud auth activate-service-account ${SERVICE_ACCOUNT} --key-file=${GCP_PROJECT_KEY} --project=${GOOGLE_PROJECT_ID}
+            echo ${GCP_PROJECT_KEY} | gcloud auth activate-service-account ${SERVICE_ACCOUNT} --project=${GOOGLE_PROJECT_ID} --key-file=-
+            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
           # SERVICE_ACCOUNT include SERVICE_ACCOUNT@DOMAIN_NAME
           # GCP_PROJECT_KEY uses plain json format
       - run:
