@@ -48,12 +48,11 @@ jobs:
             virtualenv ${PROJECT_NAME}
             . ${PROJECT_NAME}/bin/activate
       - run:
-          name: Build project and push image to gcr.io
+          name: Build project
           command: |
             docker build -t gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME .
-            docker push gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME
 
-  deploy-on-pr: # Deploy to gke
+  deploy-on-pr:
     docker:
       - image: gcr.io/google.com/cloudsdktool/cloud-sdk:350.0.0-alpine #base image
     steps:
@@ -68,17 +67,10 @@ jobs:
             gcloud auth activate-service-account ${SERVICE_ACCOUNT} --key-file=${GCP_PROJECT_KEY} --project=${GOOGLE_PROJECT_ID}
           # SERVICE_ACCOUNT include SERVICE_ACCOUNT@DOMAIN_NAME
       - run:
-          name: Install needed tools
+          name: Push image to GCR
           command: |
-            gcloud components install kubectl
-      - run:
-          name: Install helm
-          command: |
-            curl https://baltocdn.com/helm/signing.asc | apt-key add -
-            apt-get install apt-transport-https --yes
-            echo "deb https://baltocdn.com/helm/stable/debian/ all main" | tee /etc/apt/sources.list.d/helm-stable-debian.list
-            apt-get update
-            apt-get install helm
+            . ${PROJECT_NAME}/bin/activate
+            docker push gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME
 
 
 # On the master/main branch
