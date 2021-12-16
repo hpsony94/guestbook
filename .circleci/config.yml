@@ -53,6 +53,7 @@ jobs:
     docker:
       - image: gcr.io/google.com/cloudsdktool/cloud-sdk:350.0.0-alpine #base image
     steps:
+      - setup_remote_docker_cmd
       - run:
           name: Prepare env
           command: |
