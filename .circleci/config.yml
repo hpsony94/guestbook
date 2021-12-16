@@ -66,6 +66,7 @@ jobs:
           command: |
             gcloud auth activate-service-account ${SERVICE_ACCOUNT} --key-file=${GCP_PROJECT_KEY} --project=${GOOGLE_PROJECT_ID}
           # SERVICE_ACCOUNT include SERVICE_ACCOUNT@DOMAIN_NAME
+          # GCP_PROJECT_KEY uses plain json format
       - run:
           name: Push image to GCR
           command: |
