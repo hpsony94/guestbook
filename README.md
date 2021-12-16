@@ -25,4 +25,6 @@
 ## Shutdown compose stack
 ```
 > docker-compose down
+
 ```
+Update README
