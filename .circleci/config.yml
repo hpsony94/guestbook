@@ -52,6 +52,7 @@ jobs:
           name: Prepare env
           command: |
             echo "export IMAGE_TAG=pr-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
+            apt update -y
             docker tag ${PROJECT_NAME}_app gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}_app
             docker push gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}_app
 
