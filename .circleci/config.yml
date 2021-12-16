@@ -50,7 +50,7 @@ jobs:
           name: Build project
           command: |
             docker build -t app .
-            docker save -o ./.images/app.tar app
+            docker save -o .images/app.tar app
 
   deploy-on-pr:
     docker:
@@ -73,7 +73,7 @@ jobs:
       - deploy:
           name: Push image to GCR
           command: |
-            docker load -i ./.images/app.tar
+            docker load -i .images/app.tar
             docker tag app gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
             docker push gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
             
