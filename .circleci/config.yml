@@ -50,7 +50,6 @@ jobs:
           name: Build project
           command: |
             docker build -t app .
-            docker save -o app.tar app
 
   deploy-on-pr:
     docker:
@@ -70,10 +69,9 @@ jobs:
             gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
           # SERVICE_ACCOUNT include SERVICE_ACCOUNT@DOMAIN_NAME
           # GCP_PROJECT_KEY uses plain json format
-      - deploy:
+      - run:
           name: Push image to GCR
           command: |
-            docker load -i app.tar
             docker tag app gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
             docker push gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
             
