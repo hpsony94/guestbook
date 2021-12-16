@@ -72,7 +72,6 @@ jobs:
       - run:
           name: Push image to GCR
           command: |
-            . ${PROJECT_NAME}/bin/activate
             docker push gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME
 
 
@@ -86,14 +85,21 @@ jobs:
     steps:
       - setup_remote_docker_cmd
       - setup_docker_hub
+      - checkout
       - run:
           name: Prepare env
           command: |
             echo "export IMAGE_TAG=pr-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
             echo 'export IMAGE_NAME=${PROJECT_NAME}' >> $BASH_ENV
+      - run: 
+          name: Create venv
+          command: |
             virtualenv ${PROJECT_NAME}
             . ${PROJECT_NAME}/bin/activate
-            docker build -t ${PROJECT_NAME} .
+      - run:
+          name: Build project
+          command: |
+            docker build -t gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME .
 
 # # Deploy
   deploy-on-master:
