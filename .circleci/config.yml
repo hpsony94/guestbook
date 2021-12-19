@@ -56,8 +56,8 @@ jobs:
           name: Build project
           command: |
             docker build -t app .
-            docker tag app gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
-            docker push gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
+            docker tag app gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}:$IMAGE_TAG
+            docker push gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}:$IMAGE_TAG
 
   deploy-on-pr:
     docker:
@@ -95,8 +95,8 @@ jobs:
           name: Build project
           command: |
             docker build -t app .
-            docker tag app gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
-            docker push gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
+            docker tag app gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}:$IMAGE_TAG
+            docker push gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}:$IMAGE_TAG
 
 # # Deploy
   deploy-on-master:
@@ -107,11 +107,13 @@ jobs:
           name: Prepare env
           command: |
             echo "export IMAGE_TAG=m-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
+            echo "export GOOGLE_PROJECT_ID=${GOOGLE_PROJECT_ID} >> $BASH_ENV
+            echo "export PROJECT_NAME=${PROJECT_NAME} >> $BASH_ENV
       - run:
           name: Login GCP with service account
           command: |
             gcloud auth activate-service-account ${SERVICE_ACCOUNT} --key-file=${GCP_PROJECT_KEY} --project=${GOOGLE_PROJECT_ID}
-          # SERVICE_ACCOUNT include SERVICE_ACCOUNT@DOMAIN_NAME
+          # SERVICE_ACCOUNT format ACCOUNT@DOMAIN_NAME
       - run:
           name: Install helm
           command: |
@@ -123,9 +125,24 @@ jobs:
       - run:
           name: Connect kubenertes cluster
           command: |
-            gcloud container clusters get-credentials guestbook --zone us-central1-c --project devops-329316
+            gcloud container clusters get-credentials ${PROJECT_NAME} --zone ${GOOGLE_COMPUTE_ZONE} --project ${PROJECT_NAME}
 
+      - run:
+          name: Create namespace develop and switch
+          command: |
+            kubectl create namespace develop
+            kubectl config set-context --current --namespace=develop
 
+      - run:
+          name: Install redis helm chart
+          command: |
+            helm repo add bitnami https://charts.bitnami.com/bitnami
+            helm install redis bitnami/redis
+
+      - run:
+          name: Apply kubenertes config
+          command: |
+            kubectl apply -f ../deploy/deployment.yml
             
             
 
