@@ -80,7 +80,7 @@ jobs:
       DOCKER_BUILDKIT: 1
     steps:
       - setup_remote_docker_cmd
-      - setup_docker_hub
+      - setup_docker_gcr
       - checkout
       - run:
           name: Prepare env
@@ -95,17 +95,37 @@ jobs:
           name: Build project
           command: |
             docker build -t app .
+            docker tag app gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
+            docker push gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
 
 # # Deploy
   deploy-on-master:
     docker:
       - image: gcr.io/google.com/cloudsdktool/cloud-sdk:350.0.0-alpine
     steps:
-      - checkout
       - run:
           name: Prepare env
           command: |
             echo "export IMAGE_TAG=m-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
+      - run:
+          name: Login GCP with service account
+          command: |
+            gcloud auth activate-service-account ${SERVICE_ACCOUNT} --key-file=${GCP_PROJECT_KEY} --project=${GOOGLE_PROJECT_ID}
+          # SERVICE_ACCOUNT include SERVICE_ACCOUNT@DOMAIN_NAME
+      - run:
+          name: Install helm
+          command: |
+            curl https://baltocdn.com/helm/signing.asc | apt-key add -
+            apt-get install apt-transport-https --yes
+            echo "deb https://baltocdn.com/helm/stable/debian/ all main" | tee /etc/apt/sources.list.d/helm-stable-debian.list
+            apt-get update
+            apt-get install helm
+      - run:
+          name: Connect kubenertes cluster
+          command: |
+            gcloud container clusters get-credentials guestbook --zone us-central1-c --project devops-329316
+
+
             
             
 
