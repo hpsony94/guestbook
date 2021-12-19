@@ -15,6 +15,12 @@ commands:
           name: Docker hub login
           command:  |
             docker login -u ${DOCKER_HUB_USER} -p ${DOCKERHUB_PWD}
+  setup_docker_gcr:
+    steps:
+      - run:
+          name: Docker hub login
+          command:  |
+            docker login -u _json_key -p ${GCP_PROJECT_KEY} https://gcr.io
 
 jobs:
   test:
@@ -29,6 +35,45 @@ jobs:
 
 # On PR branch
   pr-dockerize:
+    docker:
+      - image: circleci/python:3.7
+    environment:
+      DOCKER_BUILDKIT: 1
+    steps:
+      - setup_remote_docker_cmd
+      - setup_docker_gcr
+      - checkout
+      - run:
+          name: Prepare env
+          command: |
+            echo "export IMAGE_TAG=pr-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
+      - run: 
+          name: Create venv
+          command: |
+            virtualenv ${PROJECT_NAME}
+            . ${PROJECT_NAME}/bin/activate
+      - run:
+          name: Build project
+          command: |
+            docker build -t app .
+            docker tag app gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
+            docker push gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
+
+  deploy-on-pr:
+    docker:
+      - image: gcr.io/google.com/cloudsdktool/cloud-sdk:350.0.0-alpine #base image
+    steps:
+      - setup_remote_docker_cmd
+      - run:
+          name: Prepare env
+          command: |
+            echo "export IMAGE_TAG=pr-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
+      
+            
+
+# On the master/main branch
+# # Custom-step:
+  master-dockerize:
     docker:
       - image: circleci/python:3.7
     environment:
@@ -51,57 +96,6 @@ jobs:
           command: |
             docker build -t app .
 
-  deploy-on-pr:
-    docker:
-      - image: gcr.io/google.com/cloudsdktool/cloud-sdk:350.0.0-alpine #base image
-    steps:
-      - setup_remote_docker_cmd
-      - run:
-          name: Prepare env
-          command: |
-            echo "export IMAGE_TAG=pr-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
-            echo 'export IMAGE_NAME=${PROJECT_NAME}' >> $BASH_ENV
-      - run:
-          name: Login GCP with service account
-          command: |
-            echo ${GCP_PROJECT_KEY} | gcloud auth activate-service-account ${SERVICE_ACCOUNT} --project=${GOOGLE_PROJECT_ID} --key-file=-
-            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
-            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
-          # SERVICE_ACCOUNT include SERVICE_ACCOUNT@DOMAIN_NAME
-          # GCP_PROJECT_KEY uses plain json format
-      - run:
-          name: Push image to GCR
-          command: |
-            docker tag app gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
-            docker push gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME:$IMAGE_TAG
-            
-
-# On the master/main branch
-# # Custom-step:
-  master-dockerize:
-    docker:
-      - image: circleci/python:3.7
-    environment:
-      DOCKER_BUILDKIT: 1
-    steps:
-      - setup_remote_docker_cmd
-      - setup_docker_hub
-      - checkout
-      - run:
-          name: Prepare env
-          command: |
-            echo "export IMAGE_TAG=pr-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
-            echo 'export IMAGE_NAME=${PROJECT_NAME}' >> $BASH_ENV
-      - run: 
-          name: Create venv
-          command: |
-            virtualenv ${PROJECT_NAME}
-            . ${PROJECT_NAME}/bin/activate
-      - run:
-          name: Build project
-          command: |
-            docker build -t gcr.io/${GOOGLE_PROJECT_ID}/$IMAGE_NAME .
-
 # # Deploy
   deploy-on-master:
     docker:
@@ -112,7 +106,7 @@ jobs:
           name: Prepare env
           command: |
             echo "export IMAGE_TAG=m-${CIRCLE_SHA1:0:7}" >> $BASH_ENV
-            gcloud auth activate-service-account --key-file 
+            
             
 
 # # Change logs
