@@ -20,7 +20,7 @@ commands:
       - run:
           name: Docker hub login
           command:  |
-            echo ${GCP_PROJECT_KEY} | docker login -u _json_key --password-stdin - https://gcr.io
+            echo ${GCP_PROJECT_KEY} | docker login -u _json_key --password-stdin https://gcr.io
 
 jobs:
   test:
